@@ -21,7 +21,7 @@ There are a few operations supported:
  * Find duplicate sentences
  * Replace periods with commas.
 
-## cdevolver
+# how?
 
 Usage Instructions: 
 
