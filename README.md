@@ -23,8 +23,6 @@ There are a few operations supported:
 
 # how?
 
-Usage Instructions: 
-
 Download the html file and open it in your browser, or just use the tools directly [here](http://www.happyacro.com/edittool.html). 
 
 # license
