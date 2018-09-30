@@ -1,0 +1,359 @@
+<html>
+
+<!-- 
+	This tool's source code is hosted here:
+
+	https://github.com/happyacro/edittool
+
+	The license for the tool: 
+
+	Copyright (c) 2018, Coder Cowboy, LLC. All rights reserved.
+
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are met:
+	* 1. Redistributions of source code must retain the above copyright notice, this
+	list of conditions and the following disclaimer.
+	* 2. Redistributions in binary form must reproduce the above copyright notice,
+	this list of conditions and the following disclaimer in the documentation
+	and/or other materials provided with the distribution.
+	  
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+	ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+	ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	  
+	The views and conclusions contained in the software and documentation are those
+	of the authors and should not be interpreted as representing official policies,
+	either expressed or implied.
+
+	---
+
+	The tool was made for working with some text for a book called HAPPY:/ACRO.
+
+	Go check out the book:
+
+	http://www.happyacro.com
+-->
+
+<head>
+<title>HAPPY:/ACRO Edit Tool</title>
+<style>
+	* { margin:0; padding:0; margin-bottom:5px; }
+	BODY { width:80%; padding:10%; padding-top:5%; }
+	BODY::after { clear:both; }
+	LI { float:left; clear:left; }
+	INPUT { margin-right:5px; }
+	INPUT[type=button] { float:left; clear:left; }
+	TEXTAREA { width:80%; height:400px; float:left; clear:left; }
+	.errorSection TEXTAREA { height:100px; }
+	LABEL { float:left; clear:left; }
+	H1 { float:left; clear:left; margin-bottom:40px; }
+</style>
+<script>
+
+var debugLog = false;
+var inputTextBox = null;
+var outputTextBox = null;
+var errorTextBox = null;
+
+function init() {
+	inputTextBox = document.getElementById("inputtext");
+	outputTextBox = document.getElementById("outputtext");
+	errorTextBox = document.getElementById("errortext");
+	hideSection("outputSection");
+	hideSection("errorSection");
+}
+
+window.addEventListener('load', init, false);
+
+function hideSection(id) {
+	document.getElementById(id).style.display = "none";
+}
+
+function showSection(id) {
+	document.getElementById(id).style.display = "initial";
+}
+
+
+function logError(errorMessage) {
+	errorTextBox.value += "Error: " + errorMessage + "\n";
+	console.log("Error: " + errorMessage);
+	showSection("errorSection");
+}
+
+function doTheThing() {	
+	showSection("outputSection");
+	hideSection("errorSection");
+	outputTextBox.value = "";
+	errorTextBox.value = "";
+	if (isChecked("randomizeSentenceOrder")) {
+		randomizeSentenceOrder();
+	} else if (isChecked("capitalizeFirstWords")) {
+		capitalizeFirstWords();
+	} else if (isChecked("capitalizeAllLetters")) {
+		capitalizeAllLetters();
+	} else if (isChecked("lowerCaseAllLetters")) {
+		lowerCaseAllLetters();
+	} else if (isChecked("countTermFrequency")) {
+		countTermFrequency();		
+	} else if (isChecked("lowerCaseAllCapitalizedWords")) {
+		lowerCaseAllCapitalizedWords();		
+	} else if (isChecked("findDupeSentences")) {
+		findDupeSentences();
+	} else if (isChecked("replacePeriodsWithCommas")) {
+		replacePeriodsWithCommas();
+	} else {
+		logError("No action is selected.");		
+	}
+}
+
+function copyOutputToInput() {
+	if (!confirm("Copy output to input?")) {
+		return;
+	}
+	inputTextBox.value = outputTextBox.value;
+}
+
+function clearAllTextAreas() {
+	if (!confirm("Clear input, output, and errors?")) {
+		return;
+	}
+	inputTextBox.value = "";
+	outputTextBox.value = "";
+	errorTextBox.value = "";
+	hideSection("outputSection");
+	hideSection("errorSection");
+}
+
+function isChecked(id) {
+	return document.getElementById(id).checked;
+}
+
+function isUpperCase(myString) { 
+  return (myString == myString.toUpperCase()); 
+} 
+
+function randomizeSentenceOrder() {
+	var sentences = parseAllSentencesIntoArray();
+	for (var i = 0; i < (sentences.length * 10); i++) {
+		var firstIndex = Math.floor(Math.random() * sentences.length);
+		var secondIndex = Math.floor(Math.random() * sentences.length);
+		var tmp = sentences[firstIndex];
+		sentences[firstIndex] = sentences[secondIndex];
+		sentences[secondIndex] = tmp;		
+	}
+	outputTextBox.value = convertSentencesToString(sentences);	
+}
+
+function capitalizeFirstWords() {
+	var sentences = parseAllSentencesIntoArray();
+	for (var i = 0; i < sentences.length; i++) {
+		var sentence = sentences[i];
+		if (sentence == null || sentence.length == 1) {
+			sentences[i] = sentence.toUpperCase();
+			continue;
+		}
+		sentences[i] = sentence.substring(0, 1).toUpperCase() + sentence.substring(1);
+	}
+	outputTextBox.value = convertSentencesToString(sentences);	
+}
+
+function capitalizeAllLetters() {
+	outputTextBox.value = inputTextBox.value.toUpperCase();
+}
+
+function lowerCaseAllLetters() {
+	outputTextBox.value = inputTextBox.value.toLowerCase();
+}
+
+function lowerCaseAllCapitalizedWords() {
+	var value = inputTextBox.value;
+	var words = value.split(" ");
+	result = "";
+	for (var i = 0; i < words.length; i++) {
+		var word = words[i];
+		result += (isUpperCase(word) ? word : word.toLowerCase());
+		if (i != words.length - 1) {
+			result += " ";
+		}
+	}
+	outputTextBox.value = result;
+}
+
+function findDupeSentences() {
+	var sentences = parseAllSentencesIntoArray();
+	sentences.sort();
+	var lastSentence = null;
+	var lastDupeSentence = null;
+	for (var i = 0; i < sentences.length; i++) {
+		var currentSentence = sentences[i];		
+		if (currentSentence == null || currentSentence.trim().length == 0) {
+			continue;
+		}		
+		currentSentence = currentSentence.toLowerCase().trim();
+		// console.log("Current: " + currentSentence + ", last: " + lastSentence);
+		if (currentSentence == lastSentence && currentSentence != lastDupeSentence) {
+			outputTextBox.value += "Dupe sentence '" + sentences[i] + "'\n";
+			lastDupeSentence = currentSentence;
+		}
+		lastSentence = currentSentence;
+	}
+}
+
+function countTermFrequency() {
+	var value = inputTextBox.value;
+	//replace all non-alpha
+	if (value == null || "" == value.trim()) {
+		return;
+	}
+	value = value.replace(/[^A-Za-z]/g, " ");
+	var words = value.split(" ");
+	console.log("initial words", words);
+	
+	var counts = [];
+	for (var i = 0; i < words.length; i++) {
+		var word = words[i];
+		if (word == null || "" == word.trim()) {
+			continue;
+		}
+		word = word.toLowerCase();
+		if (counts[word] == null) {
+			counts[word] = 0;
+		}
+		counts[word] += 1;
+	}
+	console.log("word counts", counts);
+	
+	var countsSorted = [];
+	for (var countKey in counts) {
+		var count = "" + counts[countKey].toString();
+		console.log("key: " + countKey + " , count: " + count);		
+		var wordsForCount = countsSorted[count];
+		if (wordsForCount == null) {
+			wordsForCount = [];
+			countsSorted[count] = wordsForCount;
+		}
+		wordsForCount.push(countKey);
+	}
+	console.log("words in count lists", countsSorted);
+
+	var result = "";
+	var keys = getSortedKeys(countsSorted);
+	for (var i = 0; i < keys.length; i++) {
+		var key = keys[i];
+		var wordsForCount = countsSorted[key];
+		wordsForCount.sort();
+		for (var j = 0; j < wordsForCount.length; j++) {
+			result += key + ": " + wordsForCount[j] + "\n";
+		}
+	}
+	outputTextBox.value = result;
+}
+
+function getSortedKeys(theArray) {
+	var sortedKeys = [];
+	for (var key in theArray) {
+		sortedKeys.push(key);
+	}
+	sortedKeys.sort();
+	console.log("sorted keys: ", sortedKeys);
+	return sortedKeys;
+}
+
+function replacePeriodsWithCommas() {
+	var sentences = parseAllSentencesIntoArray();
+	var result = "";
+	for (var i = 0; i < sentences.length; i++) {
+		var sentence = sentences[i];
+		if (sentence.endsWith(".")) {
+			result += sentence.substring(0, sentence.length - 1) + ", ";
+		} else {
+			result += sentence + ", ";
+		}
+	}
+	outputTextBox.value = result;
+}
+
+function convertSentencesToString(sentences) {
+	var result = "";
+	for (var i = 0; i < (sentences.length); i++) {
+		result += sentences[i];
+		if (i < (sentences.length - 1)) {
+			result += " ";
+		}
+	}
+	return result;
+}
+
+function parseAllSentencesIntoArray() {
+	var value = inputTextBox.value;
+	var sentences = (value == null) ? [] : value.split(". ");
+	var result = [];
+	for (var i = 0; i < sentences.length; i++) {
+		var sentence = sentences[i];
+		if (sentence == null || "" == sentence.trim()) {
+			continue;
+		}
+		sentence = sentence.trim();
+		//strip the final "." off the last sentence if it ends with that
+		if (i == (sentences.length -1) && sentence.endsWith(".")) {
+			sentence = sentence.substring(0, sentence.length -1);
+		}
+		if (sentence.indexOf(".") != -1) {
+			logError("Sentence has a period in it: " + sentence);
+		}
+		result.push(sentence.trim() + ".");
+	}
+	if (debugLog) {
+		console.log("Parsed sentences, input: ", value);
+		console.log("Parsed sentences, output: ", result);
+	}
+	return result;
+}
+
+</script>
+</head>
+<body>
+	<h1>HAPPY:/ACRO EDIT TOOLS</h1>
+	<br/>
+	<br/>
+	<br/>
+	<h1>SOME TOOLS MADE FOR EDITING SECTIONS OF A <a href="http://www.happyacro.com">book</a>. PLEASE CLICK THE LINK TO SEE THE WEBSITE FOR THE BOOK.</h1>
+	<br/>
+	<br/>
+	<br/>
+	<ul>
+		<li><input type="radio" name="toolMode" id="randomizeSentenceOrder" checked="true">Randomize Sentence Order</input></li>
+		<li><input type="radio" name="toolMode" id="capitalizeFirstWords">Capitalize First Words</input></li>
+		<li><input type="radio" name="toolMode" id="capitalizeAllLetters">Capitalize All Letters</input></li>
+		<li><input type="radio" name="toolMode" id="lowerCaseAllLetters">Lowercase All Letters</input></li>
+		<li><input type="radio" name="toolMode" id="lowerCaseAllCapitalizedWords">Lowercase All Capitalized Words</input></li>		
+		<li><input type="radio" name="toolMode" id="countTermFrequency">Count Term Frequency</input></li>
+		<li><input type="radio" name="toolMode" id="findDupeSentences">Find Dupe Sentences</input></li>		
+		<li><input type="radio" name="toolMode" id="replacePeriodsWithCommas">Replace periods with commas</input></li>		
+	</ul>
+	
+	<input type="button" onclick="doTheThing()" value="do the thing"/>
+	<input type="button" onclick="copyOutputToInput()" value="copy output to input"/>
+	<input type="button" onclick="clearAllTextAreas()" value="clear all fields"/>
+	<label>Input</label>
+	<textarea id="inputtext"></textarea>
+	<div id="errorSection" class="errorSection">
+		<label style="color:red">Error</label>
+		<textarea id="errortext" disabled></textarea>
+	</div>
+	<div id="outputSection">
+		<label>Output</label>
+		<textarea id="outputtext" disabled></textarea>
+	</div>
+	<h1>IF YOU LIKE THIS TOOL, TELL YOUR FRIENDS ABOUT THE COOL BOOK <a href="http://www.happyacro.com">HAPPY:/ACRO</a> AND THESE TOOLS, OR MAYBE YOU WOULD LIKE TO VISIT THE <a href="https://github.com/happyacro/edittool">GITHUB FOR THIS EDIT TOOL PROJECT</a>, IDK.
+	
+	
+</body>
+</html>
